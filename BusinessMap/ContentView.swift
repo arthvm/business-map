@@ -8,14 +8,33 @@
 import SwiftUI
 
 struct ContentView: View {
+    @State private var showSheet = true
+    @State private var detention: PresentationDetent = .third
+    @State private var contactSearch = ""
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        MapView()
+        .ignoresSafeArea()
+        .sheet(isPresented: $showSheet) {
+            NavigationView {
+                ContactsListView(searchText: $contactSearch, sheetDetent: $detention)
+                    .searchable(
+                        text: $contactSearch,
+                        placement: .navigationBarDrawer(displayMode: .automatic)
+                    )
+            }
+            .presentationDetents([.third, .large], selection: $detention)
+            .presentationDragIndicator(.visible)
+            .presentationBackgroundInteraction(.enabled)
+            .interactiveDismissDisabled()
         }
-        .padding()
+    }
+}
+
+
+extension PresentationDetent {
+    static var third: PresentationDetent {
+        .fraction(0.33)
     }
 }
 
