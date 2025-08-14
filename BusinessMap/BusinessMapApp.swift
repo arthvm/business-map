@@ -9,9 +9,14 @@ import SwiftUI
 
 @main
 struct BusinessMapApp: App {
+    @StateObject private var contactsVM = ContactsViewModel()
+    @StateObject private var sheetVM = SheetViewModel()
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(contactsVM)
+                .environmentObject(sheetVM)
         }
     }
 }

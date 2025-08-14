@@ -10,15 +10,37 @@ import Combine
 
 @MainActor
 class ContactsViewModel: ObservableObject {
-    @Published var contacts = [Contact]()
+    enum LoadState {
+        case idle
+        case loading
+        case success([Contact])
+        case failure(Error)
+    }
+
+    @Published private(set) var state: LoadState = .idle
     
-    func fetchData() async {
-        guard let dowloadedData: [Contact] = await WebService().downloadData(fromURL: "https://jsonplaceholder.typicode.com/users") else {
-            return
+    var contacts: [Contact]  {
+        if case .success(let contacts) = state {
+            return contacts
         }
         
-        contacts = dowloadedData
-        
-        return
+        return []
+    }
+    
+    init() {
+        Task {
+            await fetchData()
+        }
+    }
+    
+    func fetchData() async {
+        state = .loading
+        do {
+            let downloadedData: [Contact] = try await WebService().downloadData(fromURL: "https://jsonplaceholder.typicode.com/users")
+            
+            state = .success(downloadedData)
+        } catch {
+            state = .failure(error)
+        }
     }
 }

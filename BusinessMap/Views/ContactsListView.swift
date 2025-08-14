@@ -8,20 +8,19 @@
 import SwiftUI
 
 struct ContactsListView: View {
-    @StateObject private var viewModel = ContactsViewModel()
+    @EnvironmentObject var contactsVM: ContactsViewModel
+    @EnvironmentObject var sheetVM: SheetViewModel
     
     @Binding var searchText: String
-    
     @Environment(\.isSearching) private var searching
-    @Binding var sheetDetent: PresentationDetent
     
     let letters = (65...90).map { String(UnicodeScalar($0)!) }
-
+    
     var filteredContacts: [Contact] {
         if searchText.isEmpty {
-            viewModel.contacts
+            contactsVM.contacts
         } else {
-            viewModel.contacts.filter { $0.name.lowercased().contains(searchText.lowercased()) }
+            contactsVM.contacts.filter { $0.name.lowercased().contains(searchText.lowercased()) }
         }
     }
     
@@ -34,11 +33,12 @@ struct ContactsListView: View {
     
     var body: some View {
         List(letters, id:\.self) { letter in
-            if sheetDetent == .third {
+            switch sheetVM.detent {
+            case .medium:
                 ForEach( filteredContacts) { contact in
                     Text(contact.name)
                 }
-            } else {
+            default:
                 if let contactsForLetter = sections[letter], !contactsForLetter.isEmpty {
                     Section(letter) {
                         ForEach(sections[letter] ?? [], id:\.self) { contact in
@@ -54,20 +54,13 @@ struct ContactsListView: View {
                 }
             }
         }
-        .animation(.easeInOut, value: sheetDetent)
+        .animation(.easeInOut, value: sheetVM.detent)
         .scrollContentBackground(.hidden)
-        .onAppear {
-            if viewModel.contacts.isEmpty {
-                Task {
-                    await viewModel.fetchData()
-                }
-            }
-        }
         .onChange(of: searching) {
-            if $1 {
-                sheetDetent = .large
+            if searching {
+                sheetVM.setDetent(.large)
             } else {
-                sheetDetent = .third
+                sheetVM.setDetent(.medium)
             }
         }
         .navigationTitle("Contacts")
@@ -75,11 +68,33 @@ struct ContactsListView: View {
     }
 }
 
-#Preview {
+#Preview("Large") {
     @Previewable @State var searchText: String = ""
     
+    @Previewable @StateObject var sheetVM = SheetViewModel.preview(withDetent: .large)
+    @Previewable @StateObject var contactsVM = ContactsViewModel()
+    
     NavigationStack {
-        ContactsListView(searchText: $searchText, sheetDetent: .constant(.large))
+        ContactsListView(searchText: $searchText)
+            .environmentObject(sheetVM)
+            .environmentObject(contactsVM)
+            .searchable(
+                text: $searchText,
+                placement: .navigationBarDrawer(displayMode: .automatic)
+            )
+    }
+}
+
+#Preview("Medium") {
+    @Previewable @State var searchText: String = ""
+    
+    @Previewable @StateObject var sheetVM = SheetViewModel.preview(withDetent: .medium)
+    @Previewable @StateObject var contactsVM = ContactsViewModel()
+    
+    NavigationStack {
+        ContactsListView(searchText: $searchText)
+            .environmentObject(sheetVM)
+            .environmentObject(contactsVM)
             .searchable(
                 text: $searchText,
                 placement: .navigationBarDrawer(displayMode: .automatic)
