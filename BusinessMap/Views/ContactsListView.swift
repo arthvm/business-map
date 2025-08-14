@@ -8,55 +8,26 @@
 import SwiftUI
 
 struct ContactsListView: View {
+    @StateObject private var viewModel = ContactsViewModel()
+    
     @Binding var searchText: String
     
     @Environment(\.isSearching) private var searching
     @Binding var sheetDetent: PresentationDetent
     
     let letters = (65...90).map { String(UnicodeScalar($0)!) }
-    let contacts = [
-        "Marcos", "Helena", "Vinícius", "Priscila", "Eduardo", "Melissa", "Rogério",
-        "Tainá", "Felipe", "Lorena", "Carla", "André", "Beatriz", "Luís", "Jéssica",
-        "Sérgio", "Paula", "César", "Camila", "Valentina", "Renato", "Júlio",
-        "Clarice", "Otávio", "Bianca", "Gustavo", "Larissa", "Antônio", "Débora",
-        "Mateus", "Isabela", "Alexandre", "Natália", "Marcela", "João", "Letícia",
-        "Patrick", "Cláudia", "Rafael", "Carolina", "Douglas", "Patrícia", "Roberto",
-        "Fernanda", "Leandro", "Sílvia", "Marcelo", "Marta", "Hugo", "Tatiane",
-        "Ricardo", "Emanuelle", "Fabrício", "Samantha", "Bruno", "Viviane", "Álvaro",
-        "Simone", "Diego", "Gabriela", "Maurício", "Tatiana", "Nicolas", "Juliana",
-        "Luiz", "Rafaela", "Fernando", "Catarina", "Márcio", "Michele", "Samuel",
-        "Verônica", "Igor", "Érica", "Paulo", "Aline", "Caetano", "Rita", "Leila",
-        "Adriano", "Cléo", "Elias", "Silvana", "Renan", "Mirian", "Túlio", "Daniela",
-        "Cristiano", "Isis", "Pedro", "Andressa", "Jonas", "Lúcia", "Sebastião",
-        "Clarisse", "Enzo", "Tatiana", "Rian", "Eduarda", "Rodolfo", "Vanessa",
-        "Tiago", "Regina", "Alessandro", "Lívia", "Carlos", "Isabel", "Luciano",
-        "Rosana", "Eder", "Amanda", "Mateo", "Kelly", "Danilo", "Mirella", "Alan",
-        "Joana", "Vicente", "Elisa", "Wellington", "Noemi", "Caio", "Aurora",
-        "Cristina", "José", "Ramon", "Sheila", "Diogo", "Adriana", "Ivan", "Eliane",
-        "Daniel", "Julieta", "Otávia", "Simas", "Claudio", "Nicole", "Artur",
-        "Renata", "Mário", "Sabrina", "Estevão", "Bárbara", "Giovanni", "Cíntia",
-        "João Pedro", "Rosa", "Lucio", "Ana Paula", "Murilo", "Diana", "Thiago",
-        "Camille", "Pietro", "Janaina", "Saulo", "Alice", "Osvaldo", "Eloá",
-        "Vicentina", "Leopoldo", "Kellyn", "Elton", "Aparecida", "Cássio", "Heloísa",
-        "Eurico", "Graziella", "Armando", "Valéria", "Davi", "Mariana", "Rangel",
-        "Tereza", "Otacília", "Severino", "Cristal", "Gilberto", "Fabiana", "Nivaldo",
-        "Josiane", "Zeca", "Sandra", "Jonatas", "Marisa", "Hélio", "Dalila", "Breno",
-        "Gláucia", "Augusto", "Carmen", "Ágata", "Daniele", "Gaspar", "Francisca",
-        "Lauro", "Paloma", "Henrique", "Luciana", "Yago", "Tatiane", "Ruan", "Lilian",
-        "Emanuel", "Rayssa"
-    ]
 
-    var filteredContacts: [String] {
+    var filteredContacts: [Contact] {
         if searchText.isEmpty {
-            contacts
+            viewModel.contacts
         } else {
-            contacts.filter { $0.lowercased().contains(searchText.lowercased()) }
+            viewModel.contacts.filter { $0.name.lowercased().contains(searchText.lowercased()) }
         }
     }
     
     var sections: [String: [String]] {
         Dictionary(
-            grouping: filteredContacts,
+            grouping: filteredContacts.map(\.name),
             by: { String($0.prefix(1).uppercased()) }
         )
     }
@@ -64,8 +35,8 @@ struct ContactsListView: View {
     var body: some View {
         List(letters, id:\.self) { letter in
             if sheetDetent == .third {
-                ForEach( filteredContacts, id:\.self) { contact in
-                    Text(contact)
+                ForEach( filteredContacts) { contact in
+                    Text(contact.name)
                 }
             } else {
                 if let contactsForLetter = sections[letter], !contactsForLetter.isEmpty {
@@ -85,6 +56,13 @@ struct ContactsListView: View {
         }
         .animation(.easeInOut, value: sheetDetent)
         .scrollContentBackground(.hidden)
+        .onAppear {
+            if viewModel.contacts.isEmpty {
+                Task {
+                    await viewModel.fetchData()
+                }
+            }
+        }
         .onChange(of: searching) {
             if $1 {
                 sheetDetent = .large
