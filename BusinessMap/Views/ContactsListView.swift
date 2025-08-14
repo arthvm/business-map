@@ -32,13 +32,11 @@ struct ContactsListView: View {
     }
     
     var body: some View {
-        List(letters, id:\.self) { letter in
-            switch sheetVM.detent {
-            case .medium:
-                ForEach( filteredContacts) { contact in
-                    Text(contact.name)
-                }
-            default:
+        VStack {
+            NearbyContactsView()
+                .padding()
+            
+            List(letters, id:\.self) { letter in
                 if let contactsForLetter = sections[letter], !contactsForLetter.isEmpty {
                     Section(letter) {
                         ForEach(sections[letter] ?? [], id:\.self) { contact in
@@ -53,9 +51,9 @@ struct ContactsListView: View {
                     .sectionIndexLabel(letter)
                 }
             }
+            .animation(.easeInOut, value: sheetVM.detent)
+            .scrollContentBackground(.hidden)
         }
-        .animation(.easeInOut, value: sheetVM.detent)
-        .scrollContentBackground(.hidden)
         .onChange(of: searching) {
             if searching {
                 sheetVM.setDetent(.large)
@@ -65,6 +63,7 @@ struct ContactsListView: View {
         }
         .navigationTitle("Contacts")
         .navigationBarTitleDisplayMode(.inline)
+        
     }
 }
 
@@ -72,23 +71,6 @@ struct ContactsListView: View {
     @Previewable @State var searchText: String = ""
     
     @Previewable @StateObject var sheetVM = SheetViewModel.preview(withDetent: .large)
-    @Previewable @StateObject var contactsVM = ContactsViewModel()
-    
-    NavigationStack {
-        ContactsListView(searchText: $searchText)
-            .environmentObject(sheetVM)
-            .environmentObject(contactsVM)
-            .searchable(
-                text: $searchText,
-                placement: .navigationBarDrawer(displayMode: .automatic)
-            )
-    }
-}
-
-#Preview("Medium") {
-    @Previewable @State var searchText: String = ""
-    
-    @Previewable @StateObject var sheetVM = SheetViewModel.preview(withDetent: .medium)
     @Previewable @StateObject var contactsVM = ContactsViewModel()
     
     NavigationStack {

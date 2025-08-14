@@ -15,8 +15,8 @@ extension PresentationDetent {
         .fraction(0.15)
     }
     
-    static var third: PresentationDetent {
-        .fraction(0.33)
+    static var medium: PresentationDetent {
+        .fraction(0.50)
     }
 }
 
@@ -33,14 +33,14 @@ extension SheetViewModel {
 class SheetViewModel: ObservableObject {
     
     enum SheetDetent: CaseIterable {
-        case small, medium, large
+        case medium, large
         
         var presentationDetent: PresentationDetent {
             switch self {
-            case .small:
-                return .small
+            // case .small:
+            //    return .small
             case .medium:
-                return .third
+                return .medium
             case .large:
                 return .large
             }
@@ -48,8 +48,8 @@ class SheetViewModel: ObservableObject {
         
         static func from(_ pd: PresentationDetent) -> Self {
             switch pd {
-            case .small: return .small
-            case .third: return .medium
+            // case .small: return .small
+            case .medium: return .medium
             case .large: return .large
             default : return .medium
             }

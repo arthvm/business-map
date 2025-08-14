@@ -9,35 +9,32 @@ import SwiftUI
 import MapKit
 
 struct MapView: View {
-    @State private var cameraPosition: MapCameraPosition = .userLocation(fallback: .automatic)
-    let locationManager = CLLocationManager()
+    @EnvironmentObject var contactsVM: ContactsViewModel
+    @EnvironmentObject var mapVM: LocationViewModel
     
     var body: some View {
-        Map(
-            initialPosition: cameraPosition
-        ) {
+        Map(position: $mapVM.cameraPosition) {
+            ForEach(contactsVM.contacts) { contact in
+                Marker(contact.name, systemImage: "person.fill", coordinate: CLLocationCoordinate2D(
+                    latitude: CLongDouble(contact.address.geo.lat) ?? 0,
+                    longitude: CLongDouble(contact.address.geo.lng) ?? 0
+                ))
+            }
+            
             UserAnnotation()
         }
-        .onAppear {
-            locationManager.requestWhenInUseAuthorization()
-        }
-        .onChange(of: locationManager.authorizationStatus) { oldStatus, newStatus in
-            if newStatus == .authorizedWhenInUse || newStatus == .authorizedAlways {
-                if let coordinate = locationManager.location?.coordinate {
-                    cameraPosition = .camera(
-                        MapCamera(
-                            centerCoordinate: coordinate,
-                            distance: 500,
-                            heading: 0,
-                            pitch: 0
-                        )
-                    )
-                }
-            }
+        .mapControls {
+            MapUserLocationButton()
+                .safeAreaPadding()
         }
     }
 }
 
 #Preview {
+    @Previewable @StateObject var contactsVM: ContactsViewModel = .init()
+    @Previewable @StateObject var mapVM: LocationViewModel = .init()
+
     MapView()
+        .environmentObject(contactsVM)
+        .environmentObject(mapVM)
 }

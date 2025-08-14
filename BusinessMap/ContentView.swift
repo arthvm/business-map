@@ -15,7 +15,6 @@ struct ContentView: View {
     
     var body: some View {
         MapView()
-        .ignoresSafeArea()
         .sheet(isPresented: .constant(true)) {
             NavigationView {
                 ContactsListView(searchText: $contactSearch)
@@ -41,10 +40,17 @@ struct ContentView: View {
 }
 
 #Preview {
-    @Previewable @StateObject var contactsVM: ContactsViewModel = .init()
-    @Previewable @StateObject var sheetVM: SheetViewModel = .init()
+    let contactsVM = ContactsViewModel()
+    let locationVM = LocationViewModel()
+    let sheetVM = SheetViewModel()
+    let nearbyVM = NearbyContactsViewModel(
+        contactsVM: contactsVM,
+        locationVM: locationVM
+    )
     
     ContentView()
         .environmentObject(contactsVM)
+        .environmentObject(locationVM)
         .environmentObject(sheetVM)
+        .environmentObject(nearbyVM)
 }
