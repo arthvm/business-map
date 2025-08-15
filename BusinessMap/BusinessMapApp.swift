@@ -9,27 +9,22 @@ import SwiftUI
 
 @main
 struct BusinessMapApp: App {
-    @StateObject private var contactsVM = ContactsViewModel()
-    @StateObject private var sheetVM = SheetViewModel()
-    @StateObject private var locationVM = LocationViewModel()
-    @StateObject private var nearbyContactsVM: NearbyContactsViewModel
-
+    @StateObject private var contactsStore: ContactsStore
+    @StateObject private var locationStore: LocationStore
+    
     init() {
-        let contactsVM = ContactsViewModel()
-        let locationVM = LocationViewModel()
-        _contactsVM = StateObject(wrappedValue: contactsVM)
-        _locationVM = StateObject(wrappedValue: locationVM)
-        _sheetVM = StateObject(wrappedValue: SheetViewModel())
-        _nearbyContactsVM = StateObject(wrappedValue: NearbyContactsViewModel(contactsVM: contactsVM, locationVM: locationVM))
+        let webService = WebService()
+        let contactsStore = ContactsStore(webService: webService)
+        let locationStore = LocationStore()
+        _contactsStore = StateObject(wrappedValue: contactsStore)
+        _locationStore = StateObject(wrappedValue: locationStore)
     }
     
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environmentObject(contactsVM)
-                .environmentObject(sheetVM)
-                .environmentObject(locationVM)
-                .environmentObject(nearbyContactsVM)
+                .environmentObject(contactsStore)
+                .environmentObject(locationStore)
         }
     }
 }

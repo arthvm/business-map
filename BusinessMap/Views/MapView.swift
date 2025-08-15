@@ -9,12 +9,12 @@ import SwiftUI
 import MapKit
 
 struct MapView: View {
-    @EnvironmentObject var contactsVM: ContactsViewModel
-    @EnvironmentObject var mapVM: LocationViewModel
+    @EnvironmentObject var contactsStore: ContactsStore
+    @EnvironmentObject var mapStore: LocationStore
     
     var body: some View {
-        Map(position: $mapVM.cameraPosition) {
-            ForEach(contactsVM.contacts) { contact in
+        Map(position: $mapStore.cameraPosition) {
+            ForEach(contactsStore.contacts) { contact in
                 Marker(contact.name, systemImage: "person.fill", coordinate: CLLocationCoordinate2D(
                     latitude: CLongDouble(contact.address.geo.lat) ?? 0,
                     longitude: CLongDouble(contact.address.geo.lng) ?? 0
@@ -31,10 +31,10 @@ struct MapView: View {
 }
 
 #Preview {
-    @Previewable @StateObject var contactsVM: ContactsViewModel = .init()
-    @Previewable @StateObject var mapVM: LocationViewModel = .init()
+    @Previewable @StateObject var contactsStore = ContactsStore(webService: WebService())
+    @Previewable @StateObject var mapStore = LocationStore()
 
     MapView()
-        .environmentObject(contactsVM)
-        .environmentObject(mapVM)
+        .environmentObject(contactsStore)
+        .environmentObject(mapStore)
 }

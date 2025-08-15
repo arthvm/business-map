@@ -8,26 +8,26 @@
 import SwiftUI
 
 struct ContactsListView: View {
-    @EnvironmentObject var contactsVM: ContactsViewModel
-    @EnvironmentObject var sheetVM: SheetViewModel
+    @EnvironmentObject var contactsStore: ContactsStore
     
     @Binding var searchText: String
+    var onSearchingChange: (Bool) -> Void = { _ in }
     @Environment(\.isSearching) private var searching
     
     let letters = (65...90).map { String(UnicodeScalar($0)!) }
     
     var filteredContacts: [Contact] {
         if searchText.isEmpty {
-            contactsVM.contacts
+            contactsStore.contacts
         } else {
-            contactsVM.contacts.filter { $0.name.lowercased().contains(searchText.lowercased()) }
+            contactsStore.contacts.filter { $0.name.lowercased().contains(searchText.lowercased()) }
         }
     }
     
-    var sections: [String: [String]] {
+    var sections: [String: [Contact]] {
         Dictionary(
-            grouping: filteredContacts.map(\.name),
-            by: { String($0.prefix(1).uppercased()) }
+            grouping: filteredContacts,
+            by: { String($0.name.prefix(1).uppercased()) }
         )
     }
     
@@ -37,10 +37,11 @@ struct ContactsListView: View {
                 .padding()
             
             List(letters, id:\.self) { letter in
-                if let contactsForLetter = sections[letter], !contactsForLetter.isEmpty {
+                let contactsForLetter = sections[letter] ?? []
+                if !contactsForLetter.isEmpty {
                     Section(letter) {
-                        ForEach(sections[letter] ?? [], id:\.self) { contact in
-                            Text(contact)
+                        ForEach(contactsForLetter) { contact in
+                            ContactItemView(contact: contact)
                         }
                     }
                     .sectionIndexLabel(letter)
@@ -51,15 +52,11 @@ struct ContactsListView: View {
                     .sectionIndexLabel(letter)
                 }
             }
-            .animation(.easeInOut, value: sheetVM.detent)
+            .animation(.easeInOut, value: searching)
             .scrollContentBackground(.hidden)
         }
-        .onChange(of: searching) {
-            if searching {
-                sheetVM.setDetent(.large)
-            } else {
-                sheetVM.setDetent(.medium)
-            }
+        .onChange(of: searching) { prevState, _ in
+            onSearchingChange(prevState)
         }
         .navigationTitle("Contacts")
         .navigationBarTitleDisplayMode(.inline)
@@ -69,17 +66,19 @@ struct ContactsListView: View {
 
 #Preview("Large") {
     @Previewable @State var searchText: String = ""
-    
-    @Previewable @StateObject var sheetVM = SheetViewModel.preview(withDetent: .large)
-    @Previewable @StateObject var contactsVM = ContactsViewModel()
+    let contactsStore = ContactsStore(webService: WebService())
+    let locationStore = LocationStore()
     
     NavigationStack {
         ContactsListView(searchText: $searchText)
-            .environmentObject(sheetVM)
-            .environmentObject(contactsVM)
+            .environmentObject(contactsStore)
+            .environmentObject(locationStore)
             .searchable(
                 text: $searchText,
                 placement: .navigationBarDrawer(displayMode: .automatic)
             )
+            .task {
+                await contactsStore.fetchData()
+            }
     }
 }

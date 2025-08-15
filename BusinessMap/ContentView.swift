@@ -8,27 +8,49 @@
 import SwiftUI
 
 struct ContentView: View {
-    @EnvironmentObject var contactsVM: ContactsViewModel
-    @EnvironmentObject var sheetVM: SheetViewModel
+    @EnvironmentObject var contactsStore: ContactsStore
+    enum SheetDetent: CaseIterable {
+        case medium, large
+        
+        var presentationDetent: PresentationDetent {
+            switch self {
+            case .medium:
+                return .medium
+            case .large:
+                return .large
+            }
+        }
+        
+        static func from(_ pd: PresentationDetent) -> Self {
+            switch pd {
+            case .medium: return .medium
+            case .large: return .large
+            default : return .medium
+            }
+        }
+    }
 
     @State private var contactSearch = ""
+    @State private var sheetDetent: SheetDetent = .medium
     
     var body: some View {
         MapView()
         .sheet(isPresented: .constant(true)) {
             NavigationView {
-                ContactsListView(searchText: $contactSearch)
+                ContactsListView(searchText: $contactSearch) { searching in
+                    sheetDetent = searching ? .large : .medium
+                }
                     .searchable(
                         text: $contactSearch,
                         placement: .navigationBarDrawer(displayMode: .automatic)
                     )
             }
             .presentationDetents(
-                Set(SheetViewModel.SheetDetent.allCases.map { $0.presentationDetent }),
+                Set(SheetDetent.allCases.map { $0.presentationDetent }),
                 selection: Binding(
-                    get: { sheetVM.detent.presentationDetent },
+                    get: { sheetDetent.presentationDetent },
                     set: { newDetent in
-                        sheetVM.detent = .from(newDetent)
+                        sheetDetent = .from(newDetent)
                     }
                 )
             )
@@ -36,21 +58,16 @@ struct ContentView: View {
             .presentationBackgroundInteraction(.enabled)
             .interactiveDismissDisabled()
         }
+        .task {
+            if contactsStore.contacts.isEmpty {
+                await contactsStore.fetchData()
+            }
+        }
     }
 }
 
 #Preview {
-    let contactsVM = ContactsViewModel()
-    let locationVM = LocationViewModel()
-    let sheetVM = SheetViewModel()
-    let nearbyVM = NearbyContactsViewModel(
-        contactsVM: contactsVM,
-        locationVM: locationVM
-    )
-    
     ContentView()
-        .environmentObject(contactsVM)
-        .environmentObject(locationVM)
-        .environmentObject(sheetVM)
-        .environmentObject(nearbyVM)
+        .environmentObject(ContactsStore(webService: WebService()))
+        .environmentObject(LocationStore())
 }

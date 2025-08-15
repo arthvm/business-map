@@ -1,5 +1,5 @@
 //
-//  MapViewModel.swift
+//  LocationStore.swift
 //  BusinessMap
 //
 //  Created by Arthur Mariano on 14/08/25.
@@ -12,7 +12,7 @@ import Combine
 import SwiftUI
 
 @MainActor
-class LocationViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
+class LocationStore: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var cameraPosition: MapCameraPosition = .userLocation(fallback: .automatic)
     @Published private(set) var userLocation: CLLocationCoordinate2D?
     
@@ -52,5 +52,25 @@ class LocationViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
                 pitch: 0
             )
         )
+    }
+    
+    static func getAddress(for location: CLLocation) async -> Result<MKMapItem, Error> {
+        let request = MKReverseGeocodingRequest(location: location)
+        
+        var result: MKMapItem
+        
+        do {
+            let response = try await request?.mapItems
+            guard let placemark = response?.first else {
+                fatalError("No placemark found")
+            }
+            
+            result = placemark
+            
+        } catch {
+            return Result.failure(error)
+        }
+        
+        return Result.success(result)
     }
 }
