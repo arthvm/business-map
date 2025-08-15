@@ -29,15 +29,7 @@ class LocationStore: NSObject, ObservableObject, CLLocationManagerDelegate {
         
         if status == .authorizedWhenInUse || status == .authorizedAlways {
             if let coordinate = manager.location?.coordinate {
-                cameraPosition = .camera(
-                    MapCamera(
-                        centerCoordinate: coordinate,
-                        distance: 500,
-                        heading: 0,
-                        pitch: 0
-                    )
-                )
-                
+                centerMap(on: coordinate)
                 userLocation = coordinate
             }
         }
@@ -46,8 +38,11 @@ class LocationStore: NSObject, ObservableObject, CLLocationManagerDelegate {
     func centerMap(on coordinate: CLLocationCoordinate2D) {
         cameraPosition = .camera(
             MapCamera(
-                centerCoordinate: coordinate,
-                distance: 500,
+                centerCoordinate: CLLocationCoordinate2D(
+                    latitude: coordinate.latitude - 0.005,
+                    longitude: coordinate.longitude
+                ),
+                distance: 5000,
                 heading: 0,
                 pitch: 0
             )

@@ -19,7 +19,7 @@ class ContactsStore: ObservableObject {
     }
 
     @Published private(set) var state: LoadState = .idle
-    @Published var selectedContact: [Contact]?
+    @Published var selectedContact: Contact?
     
     var contacts: [Contact]  {
         if case .success(let contacts) = state {

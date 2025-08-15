@@ -35,7 +35,7 @@ struct ContentView: View {
     
     var body: some View {
         MapView()
-        .sheet(isPresented: .constant(true)) {
+            .sheet(isPresented: .constant(true)) {
             NavigationView {
                 ContactsListView(searchText: $contactSearch) { searching in
                     sheetDetent = searching ? .large : .medium
@@ -57,6 +57,23 @@ struct ContentView: View {
             .presentationDragIndicator(.visible)
             .presentationBackgroundInteraction(.enabled)
             .interactiveDismissDisabled()
+            .sheet(item: $contactsStore.selectedContact) { contact in
+                NavigationView {
+                    ContactDetailView(contact: contact)
+                }
+                .presentationDetents(
+                    Set(SheetDetent.allCases.map { $0.presentationDetent }),
+                    selection: Binding(
+                        get: { sheetDetent.presentationDetent },
+                        set: { newDetent in
+                            sheetDetent = .from(newDetent)
+                        }
+                    )
+                )
+                .presentationDragIndicator(.visible)
+                .presentationBackgroundInteraction(.enabled)
+                .interactiveDismissDisabled()
+            }
         }
         .task {
             if contactsStore.contacts.isEmpty {

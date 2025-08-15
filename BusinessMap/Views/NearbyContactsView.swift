@@ -57,6 +57,7 @@ struct NearbyContactsView: View {
                                   let lng = Double(contact.address.geo.lng) else { return }
                             let contactCoord = CLLocationCoordinate2D(latitude: lat, longitude: lng)
                             locationStore.centerMap(on: contactCoord)
+                            contactsStore.selectedContact = contact
                         } label: {
                             VStack(spacing: 10) {
                                 ZStack {

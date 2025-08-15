@@ -9,6 +9,8 @@ import SwiftUI
 import MapKit
 
 struct ContactItemView: View {
+    @EnvironmentObject var contactsStore: ContactsStore
+    @EnvironmentObject var locationStore: LocationStore
     @State private var contactAddress: MKMapItem?
     var contact: Contact
     
@@ -40,6 +42,13 @@ struct ContactItemView: View {
                         .redacted(reason: .placeholder)
                 }
             }
+        }
+        .onTapGesture {
+            locationStore.centerMap(on: CLLocationCoordinate2D(
+                latitude: CLongDouble(contact.address.geo.lat) ?? 0,
+                longitude: CLongDouble(contact.address.geo.lng) ?? 0
+            ))
+            contactsStore.selectedContact = contact
         }
         .task {
             guard let contactLat = CLLocationDegrees(contact.address.geo.lat) else {
@@ -103,5 +112,7 @@ struct ContactItemView: View {
     
     List {
         ContactItemView(contact: mockContact)
+            .environmentObject(ContactsStore(webService: WebService()))
+            .environmentObject(LocationStore())
     }
 }
