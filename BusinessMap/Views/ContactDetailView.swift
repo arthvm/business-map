@@ -15,6 +15,7 @@ struct ContactDetailView: View {
     
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var locationStore: LocationStore
+    @Environment(\.openURL) private var openURL
     var contact: Contact?
     
     var viewState: ViewState {
@@ -90,10 +91,12 @@ struct ContactDetailView: View {
     }
     
     func openWeb(goTo:String) {
-        if let url = URL(string: goTo)
-        {
-            UIApplication.shared.open(url)
+        var urlString = goTo
+        if !urlString.hasPrefix("http://") && !urlString.hasPrefix("https://") {
+            urlString = "https://\(urlString)"
         }
+        guard let url = URL(string: urlString) else { return }
+        openURL(url)
     }
 }
 
